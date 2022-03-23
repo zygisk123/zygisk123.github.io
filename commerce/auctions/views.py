@@ -72,17 +72,22 @@ def register(request):
 # Creating function that let user to create new item
 # 1. Importing form (created from model List)
 # 2. Checking if posted data is valid
+# 3. Save submitted form to memory not data base using: commit:False
+# 4. Made changes to the data. Added creator to the form to achieve that I used request.user
+# 5. saved form and when form is submitted user is redirected to the index.html page
+# 6. @login_required show that user must be signed up to the page 
+ 
 @login_required
 def NewItem(request):
     if request.method == "POST":
-        itemform = ItemForm(request.Post)
+        itemform = ItemForm(request.POST)
         if itemform.is_valid():
-            form = itemform.save()
+            form = itemform.save(commit=False)
             form.creator = request.user
             form.save()
-            return render(request, "auctions/index.html", {
-                "message": "Item is created"
-            })
+        return render(request, "auctions/index.html", {
+            "message": "Item is created"
+        })
     else:
         return render(request, "auctions/new_item.html", {
             "form": ItemForm()
