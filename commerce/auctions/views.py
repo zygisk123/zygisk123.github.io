@@ -3,8 +3,15 @@ from django.db import IntegrityError
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
+from django.forms import ModelForm
+from django.contrib.auth.decorators import login_required
 
-from .models import User
+from .models import User, Category, List, Bid, Comment
+
+class ItemForm(ModelForm):
+    class Meta:
+        model = List
+        fields = ['title', 'description', 'starting_price', 'category', 'image_url']
 
 
 def index(request):
@@ -61,3 +68,23 @@ def register(request):
         return HttpResponseRedirect(reverse("index"))
     else:
         return render(request, "auctions/register.html")
+
+# Creating function that let user to create new item
+# 1. Importing form (created from model List)
+# 2. Checking if posted data is valid
+@login_required
+def NewItem(request):
+    if request.method == "POST":
+        itemform = ItemForm(request.Post)
+        if itemform.is_valid():
+            form = itemform.save()
+            form.creator = request.user
+            form.save()
+            return render(request, "auctions/index.html", {
+                "message": "Item is created"
+            })
+    else:
+        return render(request, "auctions/new_item.html", {
+            "form": ItemForm()
+        })    
+            
