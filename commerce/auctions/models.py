@@ -21,7 +21,7 @@ class List(models.Model):
     date = models.DateTimeField(default=datetime.now)
     buyer = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True, related_name="Bidder")
     current_bid = models.FloatField(blank=True, null=True)
-    watchlist = models.ManyToManyField(User, blank=True, related_name="Watchers")
+    watchlist = models.ManyToManyField(User, blank=True, default="", related_name="watchers")
 
     def __str__(self):
         return f"Title: {self.title} Starting price: {self.starting_price} Current bid: {self.current_bid}"

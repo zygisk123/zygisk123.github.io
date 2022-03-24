@@ -15,7 +15,9 @@ class ItemForm(ModelForm):
 
 
 def index(request):
-    return render(request, "auctions/index.html")
+    return render(request, "auctions/index.html", {
+        "items": List.objects.all()
+    })
 
 
 def login_view(request):
@@ -92,4 +94,37 @@ def NewItem(request):
         return render(request, "auctions/new_item.html", {
             "form": ItemForm()
         })    
-            
+
+def item_page(request, item_id):
+    item = List.objects.get(pk=item_id)
+    return render(request, "auctions/item_entry.html", {
+        "item": item
+    })
+ 
+@login_required
+def watchlist(request, item_id):
+    item = List.objects.get(pk=item_id)
+    watchers = item.watchlist.all()
+    user = request.user
+    if user in watchers:
+        item.watchlist.remove(request.user)
+        return render(request, "auctions/item_entry.html", {
+        "message": f"Item was deleted from your watchlist" ,
+        "item": item,
+        "added": 0,
+        "value": 1
+    })
+    else:
+        item.watchlist.add(request.user)
+        return render(request, "auctions/item_entry.html", {
+            "message": f"Item added to your watchlist",
+            "item": item,
+            "added": 2,
+            "value": 1
+        })
+
+
+
+
+
+

@@ -1,9 +1,21 @@
 {% extends "auctions/layout.html" %}
-
 {% block body %}
     <h2>Active Listings</h2>
     {% if message %}
         <div>{{ message }}</div>
     {% endif %}
-    TODO
+
+    {% for item in items %}
+    <div class="row">
+        <div class="col-md-3">
+            <img src={{item.image_url}} width="300" height="200">
+        </div>
+        <div class="col-md-6 about_item">
+            <h5>Title: <a href="{% url 'item_page' item.id %}">{{item.title.capitalize}}</a></h5>
+            <h6>Category: {{item.category}}</h6>
+            <h6>Starting price: ${{item.starting_price}}</h6>
+            <h6>Current price: ${{item.current_bid}}</h6>
+        </div>
+    </div>
+    {% endfor %}
 {% endblock %}
