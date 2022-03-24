@@ -13,6 +13,10 @@ class ItemForm(ModelForm):
         model = List
         fields = ['title', 'description', 'starting_price', 'category', 'image_url']
 
+class BidForm(ModelForm):
+    class Meta:
+        model = List
+        fields = ['title', 'buyer']
 
 def index(request):
     return render(request, "auctions/index.html", {
@@ -130,7 +134,7 @@ def watchlist(request, item_id):
         item.added = True
         item.save()
         return render(request, "auctions/item_entry.html", {
-            "message": f"Item added to your watchlist",
+            "message": "Item added to your watchlist",
             "item": item,
         })
 
@@ -146,6 +150,55 @@ def mylist(request):
     return render(request, "auctions/my_list.html", {
         "user_list": user_list
     })
+
+@login_required
+def bid(request, item_id):
+    if request.method=="POST":
+        bid = request.POST["bid"]
+        item = List.objects.get(pk=item_id)
+        current_bid = item.current_bid.get()
+        starting_price = item.starting_price.get()
+        bid_offers = item.offers.get()
+        user = request.user
+        if bid_offers == 0:
+            current_price = starting_price
+            if bid < current_price:
+                return render(request, "auctions/item_entry.html", {
+                    "message": "Your bid is too low",
+                    "item": item,
+                })
+        else:
+            if bid <= current_price:
+                return render(request, "auctions/item_entry.html", {
+                    "message": "Your bid is too low",
+                    "item": item,
+                })
+        current_bid = bid
+        bid_offers += 1
+        return render(request, "auctions/item_entry.html", {
+            "message": "Your bid is accepted",
+            "item": item,
+            "current_bid": current_bid,
+            "bid_offers": bid_offers,
+            "user": user
+        })
+    else:
+        item = List.objects.get(pk=item_id)
+        current_bid = item.current_bid.get()
+        bid_offers = item.offers.get()
+        user = request.user
+        return render(request, "auctions/item_entry.html", {
+            "item": item,
+            "current_bid": current_bid,
+            "bid_offers": bid_offers,
+            "user": user
+        })
+
+
+
+
+
+
 
 
 

@@ -19,10 +19,11 @@ class List(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, blank=True, null=True, related_name="Category")
     creator = models.ForeignKey(User, on_delete=models.PROTECT, related_name="Creators_listing")
     date = models.DateTimeField(default=datetime.now)
-    buyer = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True, related_name="Bidder")
+    buyer = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True, related_name="Buyer")
     current_bid = models.FloatField(blank=True, null=True)
     watchlist = models.ManyToManyField(User, blank=True, default="", related_name="watchers")
     added = models.BooleanField(default=False)
+    offers = models.IntegerField(default = 0)
 
     def __str__(self):
         return f"Title: {self.title} Starting price: {self.starting_price} Current bid: {self.current_bid}"
@@ -30,7 +31,7 @@ class List(models.Model):
 class Bid(models.Model):
     item = models.ForeignKey(List, on_delete=models.CASCADE, related_name="Item_bidded")
     bid = models.FloatField()
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="Buyer")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="bidder")
     date = models.DateTimeField(default=datetime.now, blank=True)
 
     def __str__(self):
