@@ -15,8 +15,8 @@ class ItemForm(ModelForm):
 
 class BidForm(ModelForm):
     class Meta:
-        model = List
-        fields = ['title', 'buyer']
+        model = Bid
+        fields = ['bid']
 
 def index(request):
     return render(request, "auctions/index.html", {
@@ -101,12 +101,12 @@ def NewItem(request):
 # I get all data from models.py List model and display information in item_entry.html
 def item_page(request, item_id):
     item = List.objects.get(pk=item_id)
+    highest_bid = Bid.objects.filter(item=item_id).order_by('bid').first()
     return render(request, "auctions/item_entry.html", {
-        "item": item
+        "item": item,
+        "bid_form": BidForm(),
+        "bidder": highest_bid.user
     })
-
-
-
  
 @login_required
 def watchlist(request, item_id):
@@ -124,18 +124,24 @@ def watchlist(request, item_id):
         item.watchlist.remove(request.user)
         item.added = False
         item.save()
+        highest_bid = Bid.objects.filter(item=item_id).order_by('bid').first()
         return render(request, "auctions/item_entry.html", {
         "message": f"Item was deleted from your watchlist" ,
         "item": item,
+        "bid_form": BidForm(),
+        "bidder": highest_bid.user
     })
     else:
     # 5. if item not in users list. Item is added
         item.watchlist.add(request.user)
         item.added = True
         item.save()
+        highest_bid = Bid.objects.filter(item=item_id).order_by('bid').first()
         return render(request, "auctions/item_entry.html", {
             "message": "Item added to your watchlist",
             "item": item,
+            "bid_form": BidForm(),
+            "bidder": highest_bid.user
         })
 
 def mylist(request):
@@ -153,48 +159,88 @@ def mylist(request):
 
 @login_required
 def bid(request, item_id):
+    # POST method
     if request.method=="POST":
-        bid = request.POST["bid"]
-        item = List.objects.get(pk=item_id)
-        current_bid = item.current_bid.get()
-        starting_price = item.starting_price.get()
-        bid_offers = item.offers.get()
-        user = request.user
-        if bid_offers == 0:
-            current_price = starting_price
-            if bid < current_price:
+        # create form (BidForm=Bid from models.py)
+        form = BidForm(request.POST)
+        # check if form is valid
+        if form.is_valid():
+            # get posted info
+            bid = float(form.cleaned_data["bid"])
+            # make sure that auction exist
+            try:
+                item = List.objects.get(pk=item_id)
+            except List.DoesNotExist:
+                highest_bid = Bid.objects.filter(item=item_id).order_by('bid').first()
                 return render(request, "auctions/item_entry.html", {
-                    "message": "Your bid is too low",
                     "item": item,
+                    "message": "Auction doesn't exist",
+                    "bid_form": BidForm(),
+                    "bidder": highest_bid.user 
                 })
-        else:
-            if bid <= current_price:
+            # getting starting price for item
+            starting_price = item.starting_price
+            # gettting current bid of the same item
+            current_bid = float(item.current_bid)
+            # getting user which made bid
+            user = request.user
+            # checking whether item has atleast one offer or no
+            if item.offers == False:
+                # if item has no offers bid must be equal or bigger to starting price
+                if bid < starting_price:
+                    highest_bid = Bid.objects.filter(item=item_id).order_by('bid').first()
+                    return render(request, "auctions/item_entry.html", {
+                        "message": "Your bid is too low.",
+                        "item": item,
+                        "bid_form": BidForm(),
+                        "bidder": highest_bid.user 
+                    })
+            else:
+                # if item has atleast one offer bid must be bigger than current price
+                if bid <= current_bid:
+                    highest_bid = Bid.objects.filter(item=item_id).order_by('bid').first()
+                    return render(request, "auctions/item_entry.html", {
+                        "message": "Your bid is too low.",
+                        "item": item,
+                        "bid_form": BidForm(),
+                        "bidder": highest_bid.user 
+                    })
+            # checking whether bidder is items creator
+            if item.creator == user:
+                highest_bid = Bid.objects.filter(item=item_id).order_by('bid').first()
                 return render(request, "auctions/item_entry.html", {
-                    "message": "Your bid is too low",
+                    "message": "Item's creator cannot bid",
                     "item": item,
+                    "bid_form": BidForm(),
+                    "bidder": highest_bid.user 
                 })
-        current_bid = bid
-        bid_offers += 1
-        return render(request, "auctions/item_entry.html", {
-            "message": "Your bid is accepted",
-            "item": item,
-            "current_bid": current_bid,
-            "bid_offers": bid_offers,
-            "user": user
-        })
+            # if all checks are correct than we can save data to List model for tam tikram item
+            # this means that item has atleast one offer
+            item.offers = True
+            # changing current price to biggest bid
+            item.current_bid = bid
+            # data is saved
+            item.save()
+            add_bid = Bid(item = item, bid = bid, user = user)
+            add_bid.save()
+            highest_bid = Bid.objects.filter(item=item_id).order_by('bid').first()
+            return render(request, "auctions/item_entry.html", {
+                "message": "Your bid is accepted!",
+                "item": item,
+                "bid_form": BidForm(),
+                "bidder": highest_bid.user 
+            })
     else:
         item = List.objects.get(pk=item_id)
-        current_bid = item.current_bid.get()
-        bid_offers = item.offers.get()
-        user = request.user
+        bid = item.current_bid
+        highest_bid = Bid.objects.filter(item=item_id).order_by('bid').first()
         return render(request, "auctions/item_entry.html", {
             "item": item,
-            "current_bid": current_bid,
-            "bid_offers": bid_offers,
-            "user": user
+            "bid": bid,
+            "bid_form": BidForm(),
+            "bidder": highest_bid.user 
+
         })
-
-
 
 
 
