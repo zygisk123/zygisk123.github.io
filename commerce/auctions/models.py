@@ -24,14 +24,15 @@ class List(models.Model):
     watchlist = models.ManyToManyField(User, blank=True, default="", related_name="watchers")
     added = models.BooleanField(default=False) #added to watchlist or not
     offers = models.BooleanField(default=False) #has offers or no
+    active = models.BooleanField(default=True) # item is active or no
 
     def __str__(self):
-        return f"Title: {self.title} Starting price: {self.starting_price} Current bid: {self.current_bid}"
+        return f"{self.title}"
 
 class Bid(models.Model):
     item = models.ForeignKey(List, on_delete=models.CASCADE, related_name="Item_bidded")
     bid = models.DecimalField(max_digits=20, decimal_places=2)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="bidder")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, default="None", related_name="bidder")
     date = models.DateTimeField(default=datetime.now, blank=True)
 
     def __str__(self):
