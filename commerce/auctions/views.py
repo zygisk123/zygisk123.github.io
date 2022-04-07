@@ -316,7 +316,22 @@ def comment(request, item_id):
     else:
         return HttpResponseRedirect(reverse("item_page", args=(item.id,)))
 
+def categories(request):
+    categories = Category.objects.all()
+    return render(request, "auctions/categories.html", {
+        "categories": categories,
+    })
 
+def item_list(request, category_id):
+    category = Category.objects.get(pk=category_id)
+    items = List.objects.filter(active=True, category=category).order_by("title")
+    if len(items) == 0:
+        messages.success(request, "There is no items in this category")
+        return render(request, "auctions/items_list.html")
+
+    return render(request, "auctions/items_list.html",{
+        "items": items
+    })
 
 
 

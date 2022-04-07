@@ -16,7 +16,7 @@ class List(models.Model):
     description = models.TextField()
     starting_price = models.FloatField()
     image_url = models.URLField(blank=True, null=True, max_length=2000)
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, blank=True, null=True, related_name="Category")
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, blank=True, null=True, related_name="items")
     creator = models.ForeignKey(User, on_delete=models.PROTECT, related_name="Creators_listing")
     date = models.DateTimeField(default=datetime.now)
     buyer = models.ForeignKey(User, on_delete=models.CASCADE, blank=True, null=True, related_name="Buyer")
