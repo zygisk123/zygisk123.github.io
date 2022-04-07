@@ -20,6 +20,11 @@ class BidForm(ModelForm):
         model = Bid
         fields = ['bid']
 
+class CommentForm(ModelForm):
+    class Meta:
+        model = Comment
+        fields = ['comment']
+
 def index(request):
     return render(request, "auctions/index.html", {
         "items": List.objects.all()
@@ -105,23 +110,35 @@ def NewItem(request):
 # I get all data from models.py List model and display information in item_entry.html
 def item_page(request, item_id):
     item = List.objects.get(pk=item_id)
-    if item.offers == True:
-        highest_bid = Bid.objects.filter(item=item_id).order_by('bid').first()
-        if item.active == True:
-            return render(request, "auctions/item_entry.html", {
-            "item": item,
-            "bid_form": BidForm(),
-            "bidder": highest_bid.user,
-            "bid": item.current_bid
-        })
+    comments = Comment.objects.filter(item=item_id).order_by('date')
+    commentform= CommentForm()
+    if request.user.is_authenticated:
+        if item.offers == True:
+            highest_bid = Bid.objects.filter(item=item_id).order_by('bid').first()
+            if item.active == True:
+                return render(request, "auctions/item_entry.html", {
+                "item": item,
+                "bid_form": BidForm(),
+                "bidder": highest_bid.user,
+                "bid": item.current_bid,
+                "commentform": commentform,
+                "comments": comments,
+            })
+            else:
+                return render(request, "auctions/item_closed.html", {
+                "item": item,
+            })
         else:
-            return render(request, "auctions/item_closed.html", {
-            "item": item
+            return render(request, "auctions/item_entry.html", {
+                "item": item,
+                "bid_form": BidForm(),
+                "commentform": commentform,
+                "comments": comments
+            })
+    else:
+        return render(request, "auctions/item_entry.html", {
+            "item": item,
         })
-    return render(request, "auctions/item_entry.html", {
-        "item": item,
-        "bid_form": BidForm(),
-    })
  
 @login_required
 def watchlist(request, item_id):
@@ -281,7 +298,24 @@ def endbid(request, item_id):
         "date": date,
         "winner": winner
     })
-    
+
+@login_required
+def comment(request, item_id):
+    if request.method=="POST":
+        item = List.objects.get(pk=item_id)
+        commentform = CommentForm(request.POST)
+        if commentform.is_valid():
+            form = commentform.save(commit=False)
+            form.comment = commentform.cleaned_data["comment"]
+            form.user = request.user
+            form.item = item
+            form.save()
+            return HttpResponseRedirect(reverse("item_page", args=(item.id,)))
+        messages.success(request, "Please fill comment form")
+        return HttpResponseRedirect(reverse("item_page", args=(item.id,)))
+    else:
+        return HttpResponseRedirect(reverse("item_page", args=(item.id,)))
+
 
 
 
