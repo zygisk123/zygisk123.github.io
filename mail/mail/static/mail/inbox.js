@@ -5,9 +5,15 @@ document.addEventListener('DOMContentLoaded', function() {
   document.querySelector('#sent').addEventListener('click', () => load_mailbox('sent'));
   document.querySelector('#archived').addEventListener('click', () => load_mailbox('archive'));
   document.querySelector('#compose').addEventListener('click', compose_email);
+  
+  document.querySelector("#compose-form").onsubmit = send_email;
+
+
+  //document.querySelector("#compose-form").addEventListener('submit', send_email);
 
   // By default, load the inbox
   load_mailbox('inbox');
+
 });
 
 function compose_email() {
@@ -30,4 +36,35 @@ function load_mailbox(mailbox) {
 
   // Show the mailbox name
   document.querySelector('#emails-view').innerHTML = `<h3>${mailbox.charAt(0).toUpperCase() + mailbox.slice(1)}</h3>`;
+}
+
+function send_email(event) {
+  event.preventDefault();
+  // gets recipients, subject and emails body from submitted form
+  const recipients = document.querySelector('#compose-recipients').value
+  const subject = document.querySelector('#compose-subject').value
+  const body = document.querySelector('#compose-body').value
+  //send the data to the server
+  fetch('/emails', {
+    method: 'POST',
+    body: JSON.stringify({
+        recipients: recipients,
+        subject: subject,
+        body: body
+    })
+  })
+  //take the return data and convert it in JSON format
+  .then(response => response.json())
+  .then(result => {
+      // Print result
+      console.log(result);
+      alert(JSON.stringify(result));
+  });
+  load_mailbox('sent');
+  
+  // direct user to the  sent mailbox
+ // load_mailbox('sent');
+ 
+  
+  // Modifies the default beheavor so it doesn't reload the page after submitting.
 }
